@@ -11,12 +11,12 @@ import SwiftUI
 
 @MainActor @Observable
 public class HoopFrameModel {
-    var period              : Period = .halftime
-    var periodBinding       : Binding<Period> {
+    var period               : Period = .halftime
+    var periodBinding        : Binding<Period> {
         Binding(get: { self.period }, set: { self.period = $0 })
     }
-    var orgImage            : UIImage?
-    var bkgImage            : UIImage? {
+    var orgImage             : UIImage?
+    var bkgImage             : UIImage? {
         didSet {
             switch self.period {
                 case .halftime:
@@ -38,16 +38,27 @@ public class HoopFrameModel {
             }
         }
     }
-    var halfTimeFgdImg      : UIImage?
-    var finalFgdImg         : UIImage?
-    var mergedImage         : UIImage?    
-    var scoreDragons        : Int = 0
-    var scoreDragonsBinding : Binding<Int> {
-        Binding(get: { self.scoreDragons }, set: { self.scoreDragons = $0 })
+    var halfTimeFgdImg       : UIImage?
+    var finalFgdImg          : UIImage?
+    var mergedImage          : UIImage?
+    var scoreHome            : Int = 0
+    var scoreHomeBinding     : Binding<Int> {
+        Binding(get: { self.scoreHome }, set: { self.scoreHome = $0 })
     }
-    var scoreOponent        : Int = 0
-    var scoreOponentBinding : Binding<Int> {
-        Binding(get: { self.scoreOponent }, set: { self.scoreOponent = $0 })
+    var scoreOpponent        : Int = 0
+    var scoreOpponentBinding : Binding<Int> {
+        Binding(get: { self.scoreOpponent }, set: { self.scoreOpponent = $0 })
     }
-    var selectedOponentLogo : GalleryImage?
+    
+    var activeLogoTarget     : LogoTarget = .none
+    var homeLogo             : GalleryImage? = Constants.logos.first(where: { $0.id == Properties.instance.homeTeamLogo! }) {
+        didSet {
+            Properties.instance.homeTeamLogo = self.homeLogo == nil ? "" : self.homeLogo!.id
+        }
+    }
+    var opponentLogo         : GalleryImage? = Constants.logos.first(where: { $0.id == Properties.instance.opponentTeamLogo! }) {
+        didSet {
+            Properties.instance.opponentTeamLogo = self.opponentLogo == nil ? "" : self.opponentLogo!.id
+        }
+    }
 }

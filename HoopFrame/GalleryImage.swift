@@ -10,7 +10,15 @@ import SwiftUI
 
 
 struct GalleryImage: Identifiable {
-    let id       : UUID = UUID()
+    let id       : String //UUID = UUID()
     let imageName: String
     let city     : String
+    let team     : String
+    
+    init(imageName: String, city: String, team: String) {
+        self.id        = team
+        self.imageName = imageName
+        self.city      = city
+        self.team      = team
+    }
 }

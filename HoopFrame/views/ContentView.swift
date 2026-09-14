@@ -69,20 +69,32 @@ struct ContentView: View {
                             }
                     }
                     
-                    // Score image Young Rasta Dragons
-                    Image(uiImage: scoreToImage(score: self.model.scoreDragons, isOponent: false)!)
+                    // Score image Home team
+                    Image(uiImage: scoreToImage(score: self.model.scoreHome, isOponent: false)!)
                         .resizable()
                         .allowsHitTesting(false)
                     
+                    // Home logo image
+                    if self.model.homeLogo != nil {
+                        Image(self.model.homeLogo!.imageName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 75, height: 75)
+                            .foregroundStyle(.blue)
+                            .transition(.scale.combined(with: .opacity))
+                            .offset(x: isHalfTime ? -100 : -118, y: isHalfTime ? -110 : 160)
+                            .allowsHitTesting(false)
+                    }
                     
-                    // Score image Oponent
-                    Image(uiImage: scoreToImage(score: self.model.scoreOponent, isOponent: true)!)
+                    
+                    // Score image Opponent team
+                    Image(uiImage: scoreToImage(score: self.model.scoreOpponent, isOponent: true)!)
                         .resizable()
                         .allowsHitTesting(false)
                     
-                    // Oponent logo image
-                    if self.model.selectedOponentLogo != nil {
-                        Image(self.model.selectedOponentLogo!.imageName)
+                    // Opponent logo image
+                    if self.model.opponentLogo != nil {
+                        Image(self.model.opponentLogo!.imageName)
                             .resizable()
                             .scaledToFit()
                             .frame(width: 75, height: 75)
@@ -95,13 +107,38 @@ struct ContentView: View {
                 .frame(width: 324, height: 405)
                 .clipShape(RoundedRectangle(cornerSize: CGSize(width: 10, height: 10)))
                 
-                HorizontalGalleryView()
+                
+                HStack(spacing: 12) {
+                    Button("Home Logo") {
+                        toggleLogoTarget(.home)
+                    }
+                    .background(self.model.activeLogoTarget == .home ? Color.orange : Color.clear)
+                    .foregroundColor(self.model.activeLogoTarget == .home ? .white : .gray)
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .clipShape(Capsule())
+                    .buttonStyle(.glass)
+                    
+                    Button("Opponent Logo") {
+                        toggleLogoTarget(.opponent)
+                    }
+                    .background(self.model.activeLogoTarget == .opponent ? Color.orange : Color.clear)
+                    .foregroundColor(self.model.activeLogoTarget == .opponent ? .white : .gray)
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .clipShape(Capsule())
+                    .buttonStyle(.glass)
+                }
+                
+                if self.model.activeLogoTarget != .none {
+                    HorizontalGalleryView()
+                }
                                                 
-                HStack(alignment: .center) {
+                HStack(alignment: .center) {                    
                     Spacer()
-                    Text("Quakenbrück")
-                    TextField("", value: self.model.scoreDragonsBinding, formatter: NumberFormatter())
+                    Text(self.model.homeLogo == nil ? "Home" : self.model.homeLogo!.city)
+                    TextField("", value: self.model.scoreHomeBinding, formatter: NumberFormatter())
                         .focused($isInputFocused)
+                        .cornerRadius(5)
+                        .shadow(color: isInputFocused ? Color.orange.opacity(0.5) : Color.clear, radius: 8, x: 0, y: 4)
                         .onChange(of: isInputFocused) { _, focused in
                             if focused {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -120,16 +157,18 @@ struct ContentView: View {
                         .textInputAutocapitalization(.never)
                         .frame(maxWidth: 40)
                         .multilineTextAlignment(.trailing)
-                        .onChange(of: self.model.scoreDragons) { oldValue, newValue in
+                        .onChange(of: self.model.scoreHome) { oldValue, newValue in
                             if newValue < 0 {
-                                self.model.scoreDragons = 0
+                                self.model.scoreHome = 0
                             } else if newValue > 180 {
-                                self.model.scoreDragons = 180
+                                self.model.scoreHome = 180
                             }
                         }
                     Text(":")
-                    TextField("", value: self.model.scoreOponentBinding, formatter: NumberFormatter())
+                    TextField("", value: self.model.scoreOpponentBinding, formatter: NumberFormatter())
                         .focused($isInputFocused)
+                        .cornerRadius(5)
+                        .shadow(color: isInputFocused ? Color.orange.opacity(0.5) : Color.clear, radius: 8, x: 0, y: 4)
                         .onChange(of: isInputFocused) { _, focused in
                             if focused {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -147,11 +186,11 @@ struct ContentView: View {
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .frame(maxWidth: 40)
-                        .onChange(of: self.model.scoreOponent) { oldValue, newValue in
+                        .onChange(of: self.model.scoreOpponent) { oldValue, newValue in
                             if newValue < 0 {
-                                self.model.scoreOponent = 0
+                                self.model.scoreOpponent = 0
                             } else if newValue > 180 {
-                                self.model.scoreOponent = 180
+                                self.model.scoreOpponent = 180
                             }
                         }
                         .toolbar {
@@ -163,7 +202,7 @@ struct ContentView: View {
                                 .fontWeight(.bold)
                             }
                         }
-                    Text(self.model.selectedOponentLogo == nil ? "Gegner" : self.model.selectedOponentLogo!.city)
+                    Text(self.model.opponentLogo == nil ? "Opponent" : self.model.opponentLogo!.city)
                     Spacer()
                 }
                           
@@ -189,44 +228,54 @@ struct ContentView: View {
                         }
                     }
                     .buttonStyle(.glass)
+                    .disabled(self.model.homeLogo == nil || self.model.opponentLogo == nil)
                     
                     Spacer()
                     
                     Button("Save image") {
                         if self.model.mergedImage == nil { return }
                         
-                        let offsetXDragons : CGFloat
-                        let offsetYDragons : CGFloat
-                        let offsetXOponent : CGFloat
-                        let offsetYOponent : CGFloat
-                        let offsetXLogo    : CGFloat
-                        let offsetYLogo    : CGFloat
+                        let offsetXHome         : CGFloat
+                        let offsetYHome         : CGFloat
+                        let offsetXOpponent     : CGFloat
+                        let offsetYOpponent     : CGFloat
+                        let offsetXHomeLogo     : CGFloat
+                        let offsetYHomeLogo     : CGFloat
+                        let offsetXOpponentLogo : CGFloat
+                        let offsetYOpponentLogo : CGFloat
                         
                         switch self.model.period {
                             case .halftime:
-                                offsetXDragons = self.model.scoreDragons == 1 ? 170 : self.model.scoreDragons < 10 ? 145 : self.model.scoreDragons == 11 ? 155 : self.model.scoreDragons < 20 ? 140 : self.model.scoreDragons < 99 ? 100 : 80
-                                offsetYDragons = 490
+                                offsetXHome         = self.model.scoreHome == 1 ? 170 : self.model.scoreHome < 10 ? 145 : self.model.scoreHome == 11 ? 155 : self.model.scoreHome < 20 ? 140 : self.model.scoreHome < 99 ? 100 : 80
+                                offsetYHome         = 490
                                 
-                                offsetXOponent = self.model.scoreOponent == 1 ? 170 : self.model.scoreOponent < 10 ? 145 : self.model.scoreOponent == 11 ? 155 : self.model.scoreOponent < 20 ? 140 : self.model.scoreOponent < 99 ? 100 : 80
-                                offsetYOponent = 750
+                                offsetXOpponent     = self.model.scoreOpponent == 1 ? 170 : self.model.scoreOpponent < 10 ? 145 : self.model.scoreOpponent == 11 ? 155 : self.model.scoreOpponent < 20 ? 140 : self.model.scoreOpponent < 99 ? 100 : 80
+                                offsetYOpponent     = 750
                                 
-                                offsetXLogo = 75
-                                offsetYLogo = 900
+                                offsetXHomeLogo     = 75
+                                offsetYHomeLogo     = 180
+                            
+                                offsetXOpponentLogo = 75
+                                offsetYOpponentLogo = 900
                                 
                             case .final:
-                                offsetXDragons = self.model.scoreDragons == 1 ? 460 : self.model.scoreDragons < 10 ? 440 : self.model.scoreDragons == 11 ? 450 : self.model.scoreDragons < 20 ? 408 : self.model.scoreDragons < 99 ? 372 : 350
-                                offsetYDragons = 1160
+                                offsetXHome         = self.model.scoreHome == 1 ? 460 : self.model.scoreHome < 10 ? 440 : self.model.scoreHome == 11 ? 450 : self.model.scoreHome < 20 ? 408 : self.model.scoreHome < 99 ? 372 : 350
+                                offsetYHome         = 1160
                                 
-                                offsetXOponent = self.model.scoreOponent == 1 ? 680 : self.model.scoreOponent < 10 ? 660 : self.model.scoreOponent == 11 ? 670 : self.model.scoreOponent < 20 ? 628 : self.model.scoreOponent < 99 ? 592 : 570
-                                offsetYOponent = 1160
+                                offsetXOpponent     = self.model.scoreOpponent == 1 ? 680 : self.model.scoreOpponent < 10 ? 660 : self.model.scoreOpponent == 11 ? 670 : self.model.scoreOpponent < 20 ? 628 : self.model.scoreOpponent < 99 ? 592 : 570
+                                offsetYOpponent     = 1160
                                 
-                                offsetXLogo = 805
-                                offsetYLogo = 1080                                                            
+                                offsetXHomeLogo     = 25
+                                offsetYHomeLogo     = 1080
+                            
+                                offsetXOpponentLogo = 805
+                                offsetYOpponentLogo = 1080                                                            
                         }
                                                                     
-                        self.model.mergedImage = addTextToImage(drawText: "\(self.model.scoreDragons)", inImage: self.model.mergedImage!, atPoint: CGPoint(x: offsetXDragons, y: offsetYDragons))
-                        self.model.mergedImage = addTextToImage(drawText: "\(self.model.scoreOponent)", inImage: self.model.mergedImage!, atPoint: CGPoint(x: offsetXOponent, y: offsetYOponent))
-                        self.model.mergedImage = addLogoToImage(logo: UIImage(named: self.model.selectedOponentLogo!.imageName)!, inImage: self.model.mergedImage!, atPoint: CGPoint(x: offsetXLogo, y: offsetYLogo))
+                        self.model.mergedImage = addTextToImage(drawText: "\(self.model.scoreHome)", inImage: self.model.mergedImage!, atPoint: CGPoint(x: offsetXHome, y: offsetYHome))
+                        self.model.mergedImage = addTextToImage(drawText: "\(self.model.scoreOpponent)", inImage: self.model.mergedImage!, atPoint: CGPoint(x: offsetXOpponent, y: offsetYOpponent))
+                        self.model.mergedImage = addLogoToImage(logo: UIImage(named: self.model.homeLogo!.imageName)!, inImage: self.model.mergedImage!, atPoint: CGPoint(x: offsetXHomeLogo, y: offsetYHomeLogo))
+                        self.model.mergedImage = addLogoToImage(logo: UIImage(named: self.model.opponentLogo!.imageName)!, inImage: self.model.mergedImage!, atPoint: CGPoint(x: offsetXOpponentLogo, y: offsetYOpponentLogo))
                                                                                                               
                         //  3240 x 4050 -> 1080 x 1350
                         let targetSize  : CGSize  = CGSize(width: 1080, height: 1350)
@@ -272,18 +321,13 @@ struct ContentView: View {
                         debugPrint("Problem loading selected photo")
                     }
                 }
-                
-                //selectedImage = try? await photoItem?
-                //    .loadTransferable(type: Image.self)
-                //if selectedImage == nil || self.width == nil || self.height == nil { return }
-                            
-                //let size    : CGSize  = CGSize(width: 1080, height: 1350)
-                //let uiImage : UIImage = selectedImage!.getUIImage(newSize: size)!
-                //self.model.bkgImage = uiImage
             }
         }
     }
     
+    private func toggleLogoTarget(_ target: LogoTarget) {
+        self.model.activeLogoTarget = (self.model.activeLogoTarget == target) ? .none : target
+    }
             
     func addTextToImage(drawText text: String, inImage image: UIImage, atPoint point: CGPoint) -> UIImage {
         let textColor : UIColor = UIColor.white
