@@ -49,6 +49,9 @@ public class HoopFrameModel {
     var scoreOpponentBinding : Binding<Int> {
         Binding(get: { self.scoreOpponent }, set: { self.scoreOpponent = $0 })
     }
+    var scaleFactor          : CGFloat = 1.0
+    var offsetX              : CGFloat = 0.0
+    var offsetY              : CGFloat = 0.0
     
     var activeLogoTarget     : LogoTarget = .none
     var homeLogo             : GalleryImage? = Constants.logos.first(where: { $0.id == Properties.instance.homeTeamLogo! }) {

@@ -11,6 +11,7 @@ import PhotosUI
 // 1080x1350
 
 struct ContentView: View {
+    @Environment(\.displayScale)      private var displayScale
     @Environment(HoopFrameModel.self) private var model
         
     @State private var photoItem     : PhotosPickerItem?
@@ -18,11 +19,19 @@ struct ContentView: View {
     @State private var width         : CGFloat?
     @State private var height        : CGFloat?
     @State private var selection     : TextSelection?
-    
+            
     @FocusState private var isInputFocused: Bool
     
     let options : [Period] = [.halftime, .final]
         
+    private var bodyToRender: some View {
+        Image(uiImage: self.model.bkgImage!)
+            .resizable()
+            .scaledToFit()
+            .scaleEffect(self.model.scaleFactor)
+            .offset(x: self.model.offsetX, y: self.model.offsetY)
+            .cornerRadius(10)
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -45,6 +54,7 @@ struct ContentView: View {
                             .scaledToFit()
                             .frame(width: 324, height: 405)
                             .cornerRadius(10)
+                            .zoomable(minZoomScale: 1.0, maxZoomScale: 2.0, doubleTapZoomScale: 1.5)
                     }
                     
                     // Foreground template depending on selected period
@@ -271,7 +281,9 @@ struct ContentView: View {
                                 offsetXOpponentLogo = 805
                                 offsetYOpponentLogo = 1080                                                            
                         }
-                                                                    
+                                                                   
+                        self.model.bkgImage    = bodyToRender.asUIImage()
+                        
                         self.model.mergedImage = addTextToImage(drawText: "\(self.model.scoreHome)", inImage: self.model.mergedImage!, atPoint: CGPoint(x: offsetXHome, y: offsetYHome))
                         self.model.mergedImage = addTextToImage(drawText: "\(self.model.scoreOpponent)", inImage: self.model.mergedImage!, atPoint: CGPoint(x: offsetXOpponent, y: offsetYOpponent))
                         self.model.mergedImage = addLogoToImage(logo: UIImage(named: self.model.homeLogo!.imageName)!, inImage: self.model.mergedImage!, atPoint: CGPoint(x: offsetXHomeLogo, y: offsetYHomeLogo))
@@ -288,6 +300,9 @@ struct ContentView: View {
                             self.model.bkgImage    = nil
                             self.model.mergedImage = nil
                             self.selectedImage     = nil
+                            self.model.scaleFactor = 1.0
+                            self.model.offsetX     = 0.0
+                            self.model.offsetY     = 0.0
                         }
                         saver.errorHandler     = { error in print("Failed to save: \(error.localizedDescription)") }
                         
