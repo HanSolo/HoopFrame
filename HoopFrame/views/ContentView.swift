@@ -82,7 +82,7 @@ struct ContentView: View {
                             .frame(width: 75, height: 75)
                             .foregroundStyle(.blue)
                             .transition(.scale.combined(with: .opacity))
-                            .offset(x: isHalfTime ? -100 : -118, y: isHalfTime ? -110 : 160)
+                            .offset(x: isHalfTime ? -110 : -118, y: isHalfTime ? -110 : 160)
                             .allowsHitTesting(false)
                     }
                     
@@ -100,7 +100,7 @@ struct ContentView: View {
                             .frame(width: 75, height: 75)
                             .foregroundStyle(.blue)
                             .transition(.scale.combined(with: .opacity))
-                            .offset(x: isHalfTime ? -100 : 118, y: isHalfTime ? 110 : 160)
+                            .offset(x: isHalfTime ? -110 : 118, y: isHalfTime ? 110 : 160)
                             .allowsHitTesting(false)
                     }
                 }
@@ -252,10 +252,10 @@ struct ContentView: View {
                                 offsetXOpponent     = self.model.scoreOpponent == 1 ? 170 : self.model.scoreOpponent < 10 ? 145 : self.model.scoreOpponent == 11 ? 155 : self.model.scoreOpponent < 20 ? 140 : self.model.scoreOpponent < 99 ? 100 : 80
                                 offsetYOpponent     = 750
                                 
-                                offsetXHomeLogo     = 75
+                                offsetXHomeLogo     = 65
                                 offsetYHomeLogo     = 180
                             
-                                offsetXOpponentLogo = 75
+                                offsetXOpponentLogo = 65
                                 offsetYOpponentLogo = 900
                                 
                             case .final:
